@@ -2,7 +2,7 @@ import axios from 'axios'
 import { mutate } from 'swr'
 
 // WordPress API base URL - using environment variable or fallback to a default URL
-const API_BASE_URL = import.meta.env.VITE_WP_API_URL || 'https://varabit.com/wp-json/wp/v2'
+const API_BASE_URL = import.meta.env.VITE_WP_API_URL
 
 // Create an axios instance with request/response interceptors for loading state
 export const api = axios.create({
