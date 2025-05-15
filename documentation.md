@@ -11,7 +11,8 @@ This documentation provides instructions on how to set up, deploy, and maintain 
 5. [Setting Up WordPress as a Headless CMS](#setting-up-wordpress-as-a-headless-cms)
 6. [Connecting React to WordPress REST API](#connecting-react-to-wordpress-rest-api)
 7. [Deployment](#deployment)
-8. [Content Management](#content-management)
+8. [Server Configuration](#server-configuration)
+9. [Content Management](#content-management)
 9. [Extending the Blog](#extending-the-blog)
 10. [Troubleshooting](#troubleshooting)
 
@@ -147,6 +148,40 @@ const API_BASE_URL = 'https://your-wordpress-site.com/wp-json/wp/v2'
 ```
 
 ## Deployment
+
+## Server Configuration
+
+### .htaccess Best Practices
+
+```apache
+# React Router Configuration
+<IfModule mod_rewrite.c>
+  RewriteEngine On
+  RewriteBase /
+  RewriteRule ^index\.html$ - [L]
+  RewriteCond %{REQUEST_FILENAME} !-f
+  RewriteCond %{REQUEST_FILENAME} !-d
+  RewriteRule . /index.html [L]
+</IfModule>
+
+# Caching Headers for Static Assets
+<FilesMatch "\.(js|css|jpg|jpeg|png|gif|ico|svg|woff2)$">
+  Header set Cache-Control "public, max-age=31536000, immutable"
+</FilesMatch>
+
+# Security Headers
+Header set X-Content-Type-Options "nosniff"
+Header set X-Frame-Options "SAMEORIGIN"
+Header set Content-Security-Policy "default-src 'self'"
+
+# WordPress REST API Optimization
+<IfModule mod_deflate.c>
+  AddOutputFilterByType DEFLATE application/json
+</IfModule>
+
+# Prevent directory listing
+Options -Indexes
+```
 
 ### Frontend Deployment (React)
 

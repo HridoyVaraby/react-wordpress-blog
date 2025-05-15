@@ -1,8 +1,9 @@
 import { useState, useEffect } from 'react'
 import { useParams, Link } from 'react-router-dom'
 import { Helmet } from 'react-helmet-async'
-import { fetchPostBySlug, fetchRelatedPosts } from '../utils/api'
+import { fetchPostBySlug, fetchRelatedPosts, prefetchPosts } from '../utils/api'
 import { formatDate } from '../utils/formatDate'
+import DefaultAvatar from '../components/DefaultAvatar'
 import PostCard from '../components/BlogCards/PostCard'
 import NewsletterForm from '../components/NewsletterForm'
 import parse from 'html-react-parser'
@@ -39,7 +40,8 @@ const SinglePostPage = () => {
             3
           )
           
-          setRelatedPosts(relatedPostsData)
+          setRelatedPosts(relatedPostsData);
+await prefetchPosts(relatedPostsData);
         }
       } catch (err) {
         console.error('Error loading post:', err)
@@ -137,11 +139,11 @@ const SinglePostPage = () => {
             {/* Author & Date */}
             <div className="flex items-center mb-10">
               <Link to={`/author/${author.slug}`} className="flex items-center group">
-                <img
-                  src={author.avatar_urls?.['96'] || 'https://secure.gravatar.com/avatar/?s=96&d=mm&r=g'}
-                  alt={author.name || 'Author'}
-                  className="w-12 h-12 rounded-full mr-4"
-                />
+                <DefaultAvatar
+                    name={author.name}
+                    size={48}
+                    className="mr-4"
+                  />
                 <div>
                   <span className="block text-primary font-medium group-hover:text-accent transition-colors">
                     {author.name || 'Unknown author'}

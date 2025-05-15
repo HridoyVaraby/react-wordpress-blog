@@ -1,5 +1,6 @@
 import { Link } from 'react-router-dom'
 import { formatDate } from '../../utils/formatDate'
+import DefaultAvatar from '../../components/DefaultAvatar'
 
 const FeaturedPostCard = ({ post }) => {
   if (!post) return null
@@ -60,10 +61,10 @@ const FeaturedPostCard = ({ post }) => {
         
         <div className="mt-auto flex items-center">
           <Link to={`/author/${author.slug}`} className="flex items-center group">
-            <img
-              src={author.avatar_urls?.['48'] || 'https://secure.gravatar.com/avatar/?s=48&d=mm&r=g'}
-              alt={author.name || 'Author'}
-              className="w-10 h-10 rounded-full mr-3"
+            <DefaultAvatar
+              name={author.name}
+              size={48}
+              className="mr-4"
             />
             <span className="text-primary group-hover:text-accent transition-colors">
               {author.name || 'Unknown author'}

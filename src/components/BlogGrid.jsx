@@ -1,8 +1,32 @@
 import { useState, useEffect } from 'react'
 import PostCard from './BlogCards/PostCard'
-import { fetchPosts } from '../utils/api'
+import { fetchPosts, prefetchPosts, CACHE_VERSION } from '../utils/api'
 
 const BlogGrid = () => {
+  // Prefetch posts when component mounts
+  useEffect(() => {
+    const fetchAndCachePosts = async () => {
+      try {
+        const response = await fetchPosts({ per_page: 10 });
+        if (response?.posts) {
+          // Cache all posts aggressively
+          response.posts.forEach(post => {
+            const cacheKey = `post-${post.slug}`;
+            localStorage.setItem(cacheKey, JSON.stringify({
+              post,
+              timestamp: Date.now(),
+              version: CACHE_VERSION
+            }));
+          });
+          await prefetchPosts(response.posts);
+        }
+      } catch (error) {
+        console.error('Prefetch failed:', error);
+      }
+    };
+    
+    fetchAndCachePosts();
+  }, []);
   const [posts, setPosts] = useState([])
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState(null)

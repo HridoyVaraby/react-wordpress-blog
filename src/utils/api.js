@@ -18,6 +18,38 @@ export const prefetchApi = async (endpoint) => {
   return await prefetchData(url);
 };
 
+export const prefetchPosts = async (posts) => {
+  if (!posts?.length) return;
+
+  await Promise.all(posts.map(async (post) => {
+    const cacheKey = `post-${post.slug}`;
+    
+    // Check existing cache
+    const cached = localStorage.getItem(cacheKey);
+    if (cached) {
+      const { timestamp, version } = JSON.parse(cached);
+      if (version === CACHE_VERSION && Date.now() - timestamp < 3600000) {
+        return;
+      }
+    }
+
+    // Prefetch and cache
+    try {
+      const response = await api.get(`/posts/${post.id}`, {
+        params: { _embed: true }
+      });
+      
+      localStorage.setItem(cacheKey, JSON.stringify({
+        post: response.data,
+        timestamp: Date.now(),
+        version: CACHE_VERSION
+      }));
+    } catch (error) {
+      console.error('Prefetch failed for post:', post.slug, error);
+    }
+  }));
+};
+
 // Create an axios instance with request/response interceptors for loading state
 export const api = axios.create({
   baseURL: API_BASE_URL,
@@ -49,34 +81,46 @@ api.interceptors.response.use(
 )
 
 // Generic fetcher for SWR with enhanced caching
+export const CACHE_VERSION = 'v1';
+
 export const fetcher = async (url) => {
   try {
-    const response = await api.get(url)
+    // Check cache first
+    const cacheKey = `swr-cache-${url}`;
+    const cached = localStorage.getItem(cacheKey);
     
-    // Cache the response data
-    const cacheKey = `swr-cache-${url}`
+    if (cached) {
+      const { data, timestamp, version } = JSON.parse(cached);
+      if (version === CACHE_VERSION && Date.now() - timestamp < 3600000) {
+        return data;
+      }
+    }
+
+    // Fetch fresh data if cache invalid
+    const response = await api.get(url);
+    
+    // Cache with version and timestamp
     localStorage.setItem(cacheKey, JSON.stringify({
       data: response.data,
-      timestamp: Date.now()
-    }))
+      timestamp: Date.now(),
+      version: CACHE_VERSION
+    }));
     
-    return response.data
+    return response.data;
   } catch (error) {
-    // Try to return cached data if available
-    const cacheKey = `swr-cache-${url}`
-    const cachedData = localStorage.getItem(cacheKey)
+    const cacheKey = `swr-cache-${url}`;
+    const cached = localStorage.getItem(cacheKey);
     
-    if (cachedData) {
-      const { data, timestamp } = JSON.parse(cachedData)
-      // Only use cache if it's less than 1 hour old
-      if (Date.now() - timestamp < 3600000) {
-        return data
+    if (cached) {
+      const { data, timestamp, version } = JSON.parse(cached);
+      if (version === CACHE_VERSION && Date.now() - timestamp < 86400000) {
+        return data;
       }
     }
     
-    throw error
+    throw error;
   }
-}
+};
 
 // Fetch posts with optional parameters
 export const fetchPosts = async (params = {}) => {
@@ -112,23 +156,41 @@ export const fetchPosts = async (params = {}) => {
 // Fetch a single post by slug
 export const fetchPostBySlug = async (slug) => {
   try {
-    const response = await api.get('/posts', {
-      params: {
-        slug,
-        _embed: true,
+    // Check cache first
+    const cacheKey = `post-${slug}`;
+    const cachedPost = localStorage.getItem(cacheKey);
+    
+    if (cachedPost) {
+      const { post, timestamp, version } = JSON.parse(cachedPost);
+      if (version === CACHE_VERSION && Date.now() - timestamp < 3600000) {
+        return post;
       }
-    })
-    
-    if (response.data.length === 0) {
-      throw new Error('Post not found')
     }
+
+    // Fetch from API if no valid cache
+    const response = await api.get('/posts', {
+      params: { slug, _embed: true }
+    });
+
+    if (response.data.length === 0) {
+      throw new Error('Post not found');
+    }
+
+    const postData = response.data[0];
     
-    return response.data[0]
+    // Cache the post individually
+    localStorage.setItem(cacheKey, JSON.stringify({
+      post: postData,
+      timestamp: Date.now(),
+      version: CACHE_VERSION
+    }));
+
+    return postData;
   } catch (error) {
-    console.error(`Error fetching post with slug "${slug}":`, error)
-    throw error
+    console.error(`Error fetching post with slug "${slug}":`, error);
+    throw error;
   }
-}
+};
 
 // Fetch categories
 export const fetchCategories = async () => {

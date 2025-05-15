@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react'
 import FeaturedPostCard from './BlogCards/FeaturedPostCard'
-import { fetchPosts } from '../utils/api'
+import { fetchPosts, prefetchPosts } from '../utils/api'
 
 const FeaturedPosts = () => {
   const [featuredPosts, setFeaturedPosts] = useState([])
@@ -14,9 +14,13 @@ const FeaturedPosts = () => {
         // In a real implementation, you might fetch posts with a specific tag or category for "featured"
         // Or you might have a custom field like "featured" set to true
         const { posts } = await fetchPosts({
-          per_page: 2, // Only get two featured posts
-          orderby: 'date', // Get the most recent
+          per_page: 2,
+          orderby: 'date',
+          _embed: true
         })
+        
+        // Prefetch full post details
+        await prefetchPosts(posts)
         setFeaturedPosts(posts)
       } catch (err) {
         setError('Failed to load featured posts. Please try again later.')
