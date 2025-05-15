@@ -2,7 +2,21 @@ import axios from 'axios'
 import { mutate } from 'swr'
 
 // WordPress API base URL - using environment variable or fallback to a default URL
-const API_BASE_URL = import.meta.env.VITE_WP_API_URL
+import { useCachedSWR, prefetchData } from './cacheService';
+
+const API_BASE_URL = import.meta.env.VITE_WP_API_URL || 'https://your-wordpress-site.com/wp-json/wp/v2';
+
+const getFullUrl = (endpoint) => `${API_BASE_URL}${endpoint}`;
+
+export const useApi = (endpoint) => {
+  const url = getFullUrl(endpoint);
+  return useCachedSWR(url);
+};
+
+export const prefetchApi = async (endpoint) => {
+  const url = getFullUrl(endpoint);
+  return await prefetchData(url);
+};
 
 // Create an axios instance with request/response interceptors for loading state
 export const api = axios.create({
